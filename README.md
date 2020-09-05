@@ -1,4 +1,4 @@
-# angular-pipe-object-filter
+# object-filter
 This can be used to filter array or json object with multiple conditions.
 
 ### Usage
