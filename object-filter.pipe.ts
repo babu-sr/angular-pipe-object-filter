@@ -17,12 +17,13 @@ export class ObjectFilterPipe implements PipeTransform {
 		filters?: Array<Filters>,
 		changeIndicator?: any
 	): any {
-		let returnData = [];
+		let returnData = value;
 
 		if (![null, undefined].includes(typeChecker)) {
 			returnData = this.typeFilter(value, typeChecker);
 		}
-		if (returnData.length) {
+
+		if (Array.isArray(returnData) && returnData.length) {
 			returnData = this.arrayFilter(returnData, filters);
 		} else {
 			returnData = this.objectFilter(value, filters);
@@ -31,7 +32,7 @@ export class ObjectFilterPipe implements PipeTransform {
 		return returnData;
 	}
 
-	protected typeFilter(filterData, typeChecker) {
+	protected typeFilter(filterData: any, typeChecker: any) {
 		let returnData: Array<any> = filterData;
 		if (Array.isArray(typeChecker)) {
 			for (const resp of typeChecker) {
@@ -40,33 +41,48 @@ export class ObjectFilterPipe implements PipeTransform {
 		} else if (typeChecker.type && typeChecker.type === 'UNIQUE') {
 			returnData = this.uniqueChecker(filterData, typeChecker);
 		} else if (typeChecker.type && typeChecker.type === 'DUPLICATE') {
+
 		} else if (typeChecker.key && typeChecker.key !== '') {
-			returnData = returnData.filter(
-				(items) => items[typeChecker.key] != null && typeof items[typeChecker.key] === typeChecker.type
-			);
+			let actualReturnData: any = [];
+			returnData.map(items => {
+				if (items[typeChecker.key] != null && typeof items[typeChecker.key] === typeChecker.type) {
+					if (Array.isArray(items[typeChecker.key])) {
+						if (items[typeChecker.key].length) {
+							actualReturnData.push(items);
+						}
+					} else {
+						actualReturnData.push(items);
+					}
+				}
+			});
+			returnData = actualReturnData;
 		} else {
-			returnData = returnData.filter((items) => typeof items === typeChecker.type);
+			returnData = returnData.filter(items => typeof items === typeChecker.type);
 		}
 		return returnData;
 	}
 
-	protected arrayFilter(filterData, filters: Array<Filters>, filterIndex = 0) {
+	protected arrayFilter(filterData: any, filters: Array<Filters>, filterIndex = 0): any {
 		filterData = Array.from(filterData);
 		let returnData = [];
-		if (filters.length) {
+		if (filters && filters.length) {
+
 			const filterResp = filters[filterIndex];
 			filterIndex = filterIndex + 1;
 
-			let filterKeyArr = [];
+			let filterKeyArr: any = [];
 			if (filterResp.key && filterResp.string) {
+
 				if (typeof filterResp.key === 'string' || typeof filterResp.key === 'number') {
 					filterKeyArr = filterResp.key.toString().split('.');
 				} else {
 					filterKeyArr = filterResp.key;
 				}
+
 			}
 
-			let filterStringArr = [];
+
+			let filterStringArr: any = [];
 			if (filterResp.string) {
 				if (typeof filterResp.string === 'string' || typeof filterResp.string === 'number') {
 					filterStringArr = filterResp.string.toString().split(',');
@@ -75,7 +91,7 @@ export class ObjectFilterPipe implements PipeTransform {
 				}
 			}
 
-			returnData = filterData.filter((items) => {
+			returnData = filterData.filter((items: any) => {
 				let state = this.valueChecker(items, filterKeyArr, filterStringArr);
 				if (state === undefined) {
 					state = false;
@@ -98,7 +114,7 @@ export class ObjectFilterPipe implements PipeTransform {
 		return returnData;
 	}
 
-	valueChecker(item, filterKey, filterValue, index = 0) {
+	valueChecker(item: any, filterKey: any, filterValue: any, index = 0): boolean {
 		const loopIndex = index + 1;
 		if (filterKey.length > 1 && loopIndex < filterKey.length) {
 			if (typeof item[filterKey[index]] === 'object') {
@@ -113,24 +129,23 @@ export class ObjectFilterPipe implements PipeTransform {
 		}
 	}
 
-	uniqueChecker(dataArr, property, index = 0) {
-		return (
-			dataArr
-				.map((e) => e[property])
-				// store the keys of the unique objects
-				.map((e, i, final) => final.indexOf(e) === i && i)
-				// eliminate the dead keys & store unique objects
-				.filter((e) => dataArr[e])
-				.map((e) => dataArr[e])
-		);
+	uniqueChecker(dataArr: any, property: any, index = 0) {
+		return dataArr.map((e: any) => e[property])
+
+			// store the keys of the unique objects
+			.map((e: any, i: any, final: any) => final.indexOf(e) === i && i)
+
+			// eliminate the dead keys & store unique objects
+			.filter((e: any) => dataArr[e]).map((e: any) => dataArr[e]);
 	}
 
-	protected objectFilter(filterData, filters: Array<Filters>, filterIndex = 0) {
-		const returnArr = [];
+	protected objectFilter(filterData: any, filters: Array<Filters>, filterIndex = 0) {
+		const returnArr: any = [];
 		const filterResp = filters[filterIndex];
 		filterIndex = filterIndex + 1;
 
-		Object.keys(filterData).map((resp) => {
+		Object.keys(filterData).map(resp => {
+
 			if (filterResp.key && filterResp.string) {
 				let filterStringArr;
 				if (typeof filterResp.string === 'string' || typeof filterResp.string === 'number') {
@@ -145,6 +160,7 @@ export class ObjectFilterPipe implements PipeTransform {
 				} else {
 					filterKeyArr = filterResp.key;
 				}
+
 
 				let state = this.valueChecker(filterData[resp], filterKeyArr, filterStringArr);
 				if (state === undefined) {
@@ -163,15 +179,24 @@ export class ObjectFilterPipe implements PipeTransform {
 						returnArr.push(filterData[resp]);
 					}
 				}
+
 			} else {
 				returnArr.push(filterData[resp]);
 			}
 		});
 		return returnArr;
 	}
+
 }
 
+
+
+
+
+
+
 //////////////////////// Old Code ///////////////////////////
+
 
 // import { Pipe, PipeTransform } from '@angular/core';
 
@@ -189,6 +214,7 @@ export class ObjectFilterPipe implements PipeTransform {
 //       loopArr = this.objectFilter(value, filterKey, filterString, filterCondition);
 
 //     let returnData = loopArr;
+
 
 //     if (args) {
 //       returnData = this.typeFilter(returnData, args);
@@ -217,6 +243,8 @@ export class ObjectFilterPipe implements PipeTransform {
 //       return filterData.filter(items => items[nullEmptyCheckData.key].value != null && items[nullEmptyCheckData.key].value != '' );
 
 //    }
+
+
 
 //   }
 //   protected typeFilter(filterData, args) {
